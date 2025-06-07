@@ -151,4 +151,3 @@ export default async function IkigaiPreviewPage({ params }: PageProps) {
     throw error
   }
 }
-

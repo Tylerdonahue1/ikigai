@@ -28,4 +28,3 @@ export default function PassionDiagramLarge({ className }: PassionDiagramLargePr
     </div>
   )
 }
-

@@ -220,4 +220,3 @@ export default function Dashboard({ initialData, id, isPaid = false }: Dashboard
     </div>
   )
 }
-

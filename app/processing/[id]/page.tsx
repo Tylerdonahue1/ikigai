@@ -124,4 +124,3 @@ export default function ProcessingPage({ params }: { params: { id: string } }) {
     </div>
   )
 }
-

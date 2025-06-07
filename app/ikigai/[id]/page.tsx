@@ -61,4 +61,3 @@ export default async function IkigaiPage({ params }: PageProps) {
     throw error
   }
 }
-

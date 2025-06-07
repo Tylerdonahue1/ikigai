@@ -5,4 +5,3 @@ export default async function DashboardPage() {
   // First, try to use mock data for demonstration
   return <Dashboard initialData={mockUserData} id="demo" />
 }
-

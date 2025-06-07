@@ -56,4 +56,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: "Server error" }, { status: 500 })
   }
 }
-
