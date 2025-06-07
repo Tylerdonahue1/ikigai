@@ -1,126 +1,123 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Loader2 } from "lucide-react"
 
-export default function ProcessingPage({ params }: { params: { id: string } }) {
+interface ProcessingPageProps {
+  params: {
+    id: string
+  }
+}
+
+export default function ProcessingPage({ params }: ProcessingPageProps) {
   const { id } = params
   const router = useRouter()
-  const [status, setStatus] = useState<"checking" | "ready" | "not-found">("checking")
-  const [attempts, setAttempts] = useState(0)
-  const [countdown, setCountdown] = useState(45)
+  const [status, setStatus] = useState("processing")
+  const [progress, setProgress] = useState(0)
 
-  // Check if the assessment data exists
-  const checkAssessment = async () => {
-    try {
-      const response = await fetch(`/api/test-data/${id}`)
-      const data = await response.json()
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`/api/check-processing-status?id=${id}`)
+        const data = await response.json()
 
-      if (data.success && data.dataExists) {
-        setStatus("ready")
-        // Redirect to preview page
-        router.push(`/ikigai/${id}/preview`)
-      } else {
-        setStatus("checking")
-        setAttempts((prev) => prev + 1)
-
-        // If we've tried 15 times (45 seconds at 3-second intervals), stop checking
-        if (attempts >= 15) {
-          setStatus("not-found")
+        if (data.hasResults) {
+          // Analysis is complete, redirect to preview
+          router.push(`/ikigai/${id}/preview`)
+        } else if (data.status === "error") {
+          setStatus("error")
+        } else {
+          // Still processing, check again in a few seconds
+          setTimeout(checkStatus, 3000)
         }
+      } catch (error) {
+        console.error("Error checking status:", error)
+        setTimeout(checkStatus, 5000) // Retry after longer delay on error
       }
-    } catch (error) {
-      console.error("Error checking assessment:", error)
-      setStatus("checking")
-      setAttempts((prev) => prev + 1)
     }
+
+    // Start checking status
+    checkStatus()
+
+    // Simulate progress for better UX
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) return prev // Don't go to 100% until actually complete
+        return prev + Math.random() * 10
+      })
+    }, 1000)
+
+    return () => {
+      clearInterval(progressInterval)
+    }
+  }, [id, router])
+
+  if (status === "error") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
+            <div className="text-red-500 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Processing Error</h2>
+            <p className="text-gray-600 mb-4">There was an issue processing your assessment. Please try again.</p>
+            <button
+              onClick={() => router.push("/")}
+              className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+            >
+              Start Over
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
-  // Check every 3 seconds
-  useEffect(() => {
-    if (status === "checking" && attempts < 15) {
-      const timer = setTimeout(() => {
-        checkAssessment()
-      }, 3000)
-
-      return () => clearTimeout(timer)
-    }
-  }, [status, attempts])
-
-  // Countdown timer
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown((prev) => prev - 1)
-      }, 1000)
-
-      return () => clearTimeout(timer)
-    }
-  }, [countdown])
-
   return (
-    <div className="min-h-screen bg-white py-16 px-4 md:px-8">
-      <div className="max-w-3xl mx-auto text-center">
-        <h1 className="text-4xl font-serif font-bold text-[#3D405B] mb-8">Processing Your Ikigai Assessment</h1>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="p-8 text-center">
+          <div className="mb-6">
+            <Loader2 className="w-16 h-16 mx-auto text-orange-500 animate-spin" />
+          </div>
 
-        {status === "checking" && (
-          <>
-            <div className="mb-8">
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-                <div
-                  className="bg-[#E07A5F] h-2.5 rounded-full"
-                  style={{ width: `${Math.min(100, (attempts / 15) * 100)}%` }}
-                ></div>
-              </div>
-              <p className="text-xl text-[#3D405B] font-serif">Please wait while we prepare your assessment...</p>
-              <p className="text-lg text-[#3D405B] font-serif mt-2">Estimated time remaining: {countdown} seconds</p>
-            </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Analyzing Your Ikigai</h2>
 
-            <div className="flex justify-center space-x-2">
-              <div className="w-3 h-3 rounded-full bg-[#E07A5F] animate-bounce"></div>
-              <div
-                className="w-3 h-3 rounded-full bg-[#E07A5F] animate-bounce"
-                style={{ animationDelay: "0.2s" }}
-              ></div>
-              <div
-                className="w-3 h-3 rounded-full bg-[#E07A5F] animate-bounce"
-                style={{ animationDelay: "0.4s" }}
-              ></div>
-            </div>
-          </>
-        )}
+          <p className="text-gray-600 mb-6">
+            Our AI is carefully analyzing your responses to create your personalized Ikigai report. This usually takes
+            1-2 minutes.
+          </p>
 
-        {status === "ready" && (
-          <p className="text-xl text-[#3D405B] font-serif">Your assessment is ready! Redirecting you now...</p>
-        )}
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+            <div
+              className="bg-orange-500 h-2 rounded-full transition-all duration-1000 ease-out"
+              style={{ width: `${Math.min(progress, 90)}%` }}
+            />
+          </div>
 
-        {status === "not-found" && (
-          <>
-            <p className="text-xl text-[#3D405B] font-serif mb-8">
-              We're still processing your assessment. This is taking longer than expected.
+          <div className="space-y-2 text-sm text-gray-500">
+            <p>✓ Processing your interests and passions</p>
+            <p>✓ Analyzing your skills and abilities</p>
+            <p>✓ Identifying your potential impact</p>
+            <p className={progress > 60 ? "text-orange-600 font-medium" : ""}>
+              {progress > 60 ? "✓" : "○"} Generating personalized insights
             </p>
-
-            <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 justify-center">
-              <Button
-                onClick={() => {
-                  setStatus("checking")
-                  setAttempts(0)
-                  setCountdown(45)
-                  checkAssessment()
-                }}
-                className="bg-[#E07A5F] hover:bg-[#E07A5F]/90 text-white"
-              >
-                Check Again
-              </Button>
-
-              <Button onClick={() => router.push("/")} variant="outline">
-                Return Home
-              </Button>
-            </div>
-          </>
-        )}
-      </div>
+            <p className={progress > 80 ? "text-orange-600 font-medium" : ""}>
+              {progress > 80 ? "✓" : "○"} Finding your role models
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
