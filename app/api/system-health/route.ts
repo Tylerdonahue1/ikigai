@@ -61,10 +61,10 @@ export async function GET() {
     console.log("Checking environment variables...")
     const envVars = {
       ANTHROPIC_API_KEY: !!process.env.ANTHROPIC_API_KEY,
-      KV_REST_API_URL: !!process.env.KV_REST_API_URL,
-      KV_REST_API_TOKEN: !!process.env.KV_REST_API_TOKEN,
       SITE_URL: !!process.env.SITE_URL,
       STRIPE_SECRET_KEY: !!process.env.STRIPE_SECRET_KEY,
+      STORAGE_URL: !!process.env.STORAGE_URL,
+      STORAGE_TOKEN: !!process.env.STORAGE_TOKEN,
     }
 
     const missingVars = Object.entries(envVars)

@@ -8,12 +8,14 @@ export async function GET() {
 
     // Check environment variables
     const envCheck = {
+      STORAGE_URL: !!process.env.STORAGE_URL,
+      STORAGE_TOKEN: !!process.env.STORAGE_TOKEN,
+      urlValue: process.env.STORAGE_URL ? "Set (hidden)" : "Not set",
+      tokenValue: process.env.STORAGE_TOKEN ? "Set (hidden)" : "Not set",
       KV_REST_API_URL: !!process.env.KV_REST_API_URL,
       KV_REST_API_TOKEN: !!process.env.KV_REST_API_TOKEN,
       KV_URL: !!process.env.KV_URL,
       REDIS_URL: !!process.env.REDIS_URL,
-      urlValue: process.env.KV_REST_API_URL ? "Set (hidden)" : "Not set",
-      tokenValue: process.env.KV_REST_API_TOKEN ? "Set (hidden)" : "Not set",
     }
 
     console.log("Environment variables:", envCheck)
@@ -22,8 +24,8 @@ export async function GET() {
     let upstashTest = null
     try {
       const redis = new Redis({
-        url: process.env.KV_REST_API_URL!,
-        token: process.env.KV_REST_API_TOKEN!,
+        url: process.env.STORAGE_URL!,
+        token: process.env.STORAGE_TOKEN!,
       })
 
       const testKey = `test-${Date.now()}`

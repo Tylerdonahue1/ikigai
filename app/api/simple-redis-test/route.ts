@@ -3,8 +3,8 @@ import { NextResponse } from "next/server"
 export async function GET() {
   try {
     // Test with a simple fetch to Upstash REST API
-    const url = process.env.KV_REST_API_URL
-    const token = process.env.KV_REST_API_TOKEN
+    const url = process.env.STORAGE_URL
+    const token = process.env.STORAGE_TOKEN
 
     if (!url || !token) {
       return NextResponse.json({

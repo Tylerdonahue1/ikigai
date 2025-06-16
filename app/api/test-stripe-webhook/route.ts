@@ -3,8 +3,8 @@ import { Redis } from "@upstash/redis"
 
 // Initialize Redis client
 const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
+  url: process.env.STORAGE_URL!, // Or your new URL variable name
+  token: process.env.STORAGE_TOKEN!, // Or your new TOKEN variable name
 })
 
 export async function GET(request: Request) {

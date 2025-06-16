@@ -5,8 +5,8 @@ export async function GET() {
     success: true,
     message: "API is working!",
     env: {
-      url: process.env.KV_REST_API_URL ? "Set" : "Not set",
-      token: process.env.KV_REST_API_TOKEN ? "Set" : "Not set",
+      url: process.env.STORAGE_URL ? "Set" : "Not set", // Or your new URL variable name
+      token: process.env.STORAGE_TOKEN ? "Set" : "Not set", // Or your new TOKEN variable name
       site: process.env.SITE_URL || "Not set",
     },
   })
