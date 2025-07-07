@@ -4,404 +4,415 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
-import { Mic, MicOff, Phone, PhoneOff, MessageSquare, User, Bot, AlertCircle } from "lucide-react"
+import { Phone, PhoneOff, Mic, MicOff, MessageCircle, Loader2, AlertCircle, Clock } from "lucide-react"
 
-interface VoiceConversationInterfaceProps {
-  userEmail: string
-  onConversationEnd?: (data: any) => void
+interface VoiceConversationProps {
+  email: string
+  onComplete: (data: any) => void
+  onError: (error: string) => void
 }
 
-interface ConversationEntry {
-  timestamp: Date
-  type: "user" | "assistant" | "system" | "function"
+interface ConversationMessage {
+  id: string
+  timestamp: string
+  role: "user" | "assistant"
   content: string
-  functionName?: string
-  functionArgs?: any
+  functionCall?: any
 }
 
-export default function VoiceConversationInterface({ userEmail, onConversationEnd }: VoiceConversationInterfaceProps) {
+export default function VoiceConversationInterface({ email, onComplete, onError }: VoiceConversationProps) {
   const [isCallActive, setIsCallActive] = useState(false)
-  const [callStatus, setCallStatus] = useState<string>("idle")
-  const [conversationLog, setConversationLog] = useState<ConversationEntry[]>([])
-  const [surveyProgress, setSurveyProgress] = useState(0)
-  const [currentSection, setCurrentSection] = useState("")
-  const [callDuration, setCallDuration] = useState(0)
-  const [error, setError] = useState<string | null>(null)
-  const [callId, setCallId] = useState<string | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
+  const [currentCall, setCurrentCall] = useState<any>(null)
+  const [conversation, setConversation] = useState<ConversationMessage[]>([])
+  const [callDuration, setCallDuration] = useState(0)
+  const [progress, setProgress] = useState(0)
+  const [isMuted, setIsMuted] = useState(false)
+  const [assistantId, setAssistantId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const callStartTime = useRef<Date | null>(null)
+  const callStartTime = useRef<number | null>(null)
   const durationInterval = useRef<NodeJS.Timeout | null>(null)
+  const webCallFrame = useRef<HTMLIFrameElement>(null)
+  const pollInterval = useRef<NodeJS.Timeout | null>(null)
 
+  // Initialize assistant on mount
   useEffect(() => {
-    // Auto-start the conversation when component mounts
-    startVoiceConversation()
+    initializeAssistant()
+  }, [])
+
+  // Call duration timer
+  useEffect(() => {
+    if (isCallActive && callStartTime.current) {
+      durationInterval.current = setInterval(() => {
+        setCallDuration(Math.floor((Date.now() - callStartTime.current!) / 1000))
+      }, 1000)
+    } else {
+      if (durationInterval.current) {
+        clearInterval(durationInterval.current)
+      }
+    }
 
     return () => {
       if (durationInterval.current) {
         clearInterval(durationInterval.current)
       }
     }
+  }, [isCallActive])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollInterval.current) {
+        clearInterval(pollInterval.current)
+      }
+      if (durationInterval.current) {
+        clearInterval(durationInterval.current)
+      }
+    }
   }, [])
 
-  const addToConversationLog = (
-    type: ConversationEntry["type"],
-    content: string,
-    functionName?: string,
-    functionArgs?: any,
-  ) => {
-    setConversationLog((prev) => [
-      ...prev,
-      {
-        timestamp: new Date(),
-        type,
-        content,
-        functionName,
-        functionArgs,
-      },
-    ])
-  }
+  const initializeAssistant = async () => {
+    try {
+      // Check for existing assistant first
+      const existingResponse = await fetch("/api/vapi/create-assistant", {
+        method: "GET",
+      })
+      const existingData = await existingResponse.json()
 
-  const startCallDurationTimer = () => {
-    callStartTime.current = new Date()
-    durationInterval.current = setInterval(() => {
-      if (callStartTime.current) {
-        const now = new Date()
-        const duration = Math.floor((now.getTime() - callStartTime.current.getTime()) / 1000)
-        setCallDuration(duration)
+      if (existingData.success && existingData.assistantId) {
+        setAssistantId(existingData.assistantId)
+        return
       }
-    }, 1000)
-  }
 
-  const stopCallDurationTimer = () => {
-    if (durationInterval.current) {
-      clearInterval(durationInterval.current)
-      durationInterval.current = null
+      // Create new assistant if none exists
+      const createResponse = await fetch("/api/vapi/create-assistant", {
+        method: "POST",
+      })
+      const createData = await createResponse.json()
+
+      if (createData.success) {
+        setAssistantId(createData.assistantId)
+      } else {
+        throw new Error(createData.error || "Failed to create assistant")
+      }
+    } catch (error) {
+      console.error("Error initializing assistant:", error)
+      setError("Failed to initialize voice assistant")
+      onError("Failed to initialize voice assistant")
     }
-    callStartTime.current = null
   }
 
-  const startVoiceConversation = async () => {
+  const startVoiceCall = async () => {
+    if (!assistantId) {
+      setError("Assistant not ready")
+      return
+    }
+
     setIsConnecting(true)
     setError(null)
 
     try {
-      // Create web call through secure API
-      const response = await fetch("/api/vapi/create-web-call", {
+      // Create web call
+      const callResponse = await fetch("/api/vapi/create-web-call", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          assistantId: "your-assistant-id", // This would come from setup
-          metadata: {
-            userEmail,
-            surveyType: "ikigai_comprehensive",
-            startTime: new Date().toISOString(),
-          },
+          assistantId,
+          customer: { email },
+          metadata: { surveyType: "ikigai" },
         }),
       })
 
-      const data = await response.json()
-
-      if (data.success) {
-        setCallId(data.call.id)
-        setIsCallActive(true)
-        setCallStatus("connected")
-        startCallDurationTimer()
-        addToConversationLog("system", "Connected to Iki. Voice conversation started.")
-        addToConversationLog(
-          "assistant",
-          "Hello I'm Iki, here to help you leverage the Ikigai framework for discovering meaningful work.",
-        )
-      } else {
-        setError(data.error || "Failed to start voice conversation")
+      const callData = await callResponse.json()
+      if (!callData.success) {
+        throw new Error(callData.error || "Failed to create web call")
       }
+
+      // Set up iframe for web call
+      if (webCallFrame.current && callData.webCallUrl) {
+        webCallFrame.current.src = callData.webCallUrl
+        webCallFrame.current.style.display = "block"
+      }
+
+      setCurrentCall({ id: callData.callId, url: callData.webCallUrl })
+      setIsCallActive(true)
+      callStartTime.current = Date.now()
+
+      // Add initial message
+      addConversationMessage("assistant", "Voice conversation started. Please wait for Iki to begin speaking.")
+
+      // Start polling for updates
+      startPollingCallStatus(callData.callId)
     } catch (error) {
-      console.error("Error starting voice conversation:", error)
-      setError("Failed to connect to voice service")
+      console.error("Error starting call:", error)
+      const errorMessage = error instanceof Error ? error.message : "Unknown error"
+      setError(errorMessage)
+      onError(errorMessage)
     } finally {
       setIsConnecting(false)
     }
   }
 
-  const endVoiceConversation = async () => {
-    if (!callId) return
+  const endVoiceCall = async () => {
+    if (!currentCall) return
 
     try {
-      const response = await fetch(`/api/vapi/end-call/${callId}`, {
-        method: "DELETE",
+      await fetch(`/api/vapi/end-call/${currentCall.id}`, {
+        method: "POST",
       })
 
-      if (response.ok) {
-        setIsCallActive(false)
-        setCallStatus("ended")
-        stopCallDurationTimer()
-        addToConversationLog("system", "Voice conversation ended")
+      setIsCallActive(false)
+      callStartTime.current = null
 
-        // Get final call data
-        const callDataResponse = await fetch(`/api/vapi/get-call/${callId}`)
-        if (callDataResponse.ok) {
-          const callData = await callDataResponse.json()
-          if (onConversationEnd) {
-            onConversationEnd(callData.call)
-          }
-        }
+      if (webCallFrame.current) {
+        webCallFrame.current.style.display = "none"
+        webCallFrame.current.src = ""
       }
-    } catch (error) {
-      console.error("Error ending voice conversation:", error)
-      addToConversationLog("system", "Error ending conversation")
-    }
 
-    setCallId(null)
+      if (pollInterval.current) {
+        clearInterval(pollInterval.current)
+      }
+
+      addConversationMessage("assistant", "Voice conversation ended.")
+    } catch (error) {
+      console.error("Error ending call:", error)
+      setError("Failed to end call properly")
+    }
   }
 
-  const formatDuration = (seconds: number) => {
+  const startPollingCallStatus = (callId: string) => {
+    pollInterval.current = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/vapi/get-call/${callId}`)
+        const data = await response.json()
+
+        if (!data.success) {
+          console.error("Failed to get call status:", data.error)
+          return
+        }
+
+        const call = data.call
+
+        // Update conversation with new messages
+        if (call.messages && call.messages.length > conversation.length) {
+          const newMessages = call.messages.slice(conversation.length)
+          newMessages.forEach((msg: any) => {
+            addConversationMessage(msg.role, msg.content, msg.functionCall)
+          })
+        }
+
+        // Update progress based on function calls
+        if (call.functionCalls) {
+          const totalExpectedCalls = 14 // Number of survey sections
+          const completedCalls = call.functionCalls.filter((fc: any) => fc.name === "capture_survey_response").length
+          setProgress((completedCalls / totalExpectedCalls) * 100)
+        }
+
+        // Check if call ended
+        if (call.status === "ended") {
+          if (pollInterval.current) {
+            clearInterval(pollInterval.current)
+          }
+          setIsCallActive(false)
+
+          // Process final data
+          const surveyData = extractSurveyData(call.functionCalls || [])
+          onComplete({
+            email,
+            surveyData,
+            conversation,
+            callId,
+          })
+        }
+      } catch (error) {
+        console.error("Error polling call status:", error)
+      }
+    }, 2000)
+
+    // Clean up after 30 minutes
+    setTimeout(
+      () => {
+        if (pollInterval.current) {
+          clearInterval(pollInterval.current)
+        }
+      },
+      30 * 60 * 1000,
+    )
+  }
+
+  const extractSurveyData = (functionCalls: any[]) => {
+    const surveyData: any = {}
+
+    functionCalls
+      .filter((fc) => fc.name === "capture_survey_response")
+      .forEach((fc) => {
+        const { questionType, response, extractedData } = fc.parameters
+        surveyData[questionType] = extractedData || response
+      })
+
+    return surveyData
+  }
+
+  const addConversationMessage = (role: "user" | "assistant", content: string, metadata?: any) => {
+    const message: ConversationMessage = {
+      id: `${Date.now()}-${Math.random()}`,
+      timestamp: new Date().toISOString(),
+      role,
+      content,
+      functionCall: metadata?.name ? metadata : undefined,
+    }
+
+    setConversation((prev) => [...prev, message])
+  }
+
+  const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, "0")}`
   }
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-  }
-
-  const getTypeIcon = (type: ConversationEntry["type"]) => {
-    switch (type) {
-      case "user":
-        return <User className="w-4 h-4" />
-      case "assistant":
-        return <Bot className="w-4 h-4" />
-      case "function":
-        return <MessageSquare className="w-4 h-4" />
-      default:
-        return <AlertCircle className="w-4 h-4" />
-    }
-  }
-
-  const getTypeColor = (type: ConversationEntry["type"]) => {
-    switch (type) {
-      case "user":
-        return "bg-blue-100 border-blue-200"
-      case "assistant":
-        return "bg-gray-100 border-gray-200"
-      case "function":
-        return "bg-green-100 border-green-200"
-      default:
-        return "bg-yellow-100 border-yellow-200"
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center py-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Voice Conversation with Iki</h1>
-          <p className="text-gray-600">Speak naturally about your interests, strengths, and aspirations</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Controls & Status */}
-          <div className="space-y-6">
-            {/* Connection Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  {isCallActive ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                  <span>Voice Status</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Call Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center space-x-2">
+              {isCallActive ? (
+                <>
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                  <span>Live Conversation</span>
+                </>
+              ) : (
+                <>
+                  <Phone className="w-5 h-5" />
+                  <span>Voice Conversation</span>
+                </>
+              )}
+            </span>
+            {isCallActive && (
+              <Badge variant="outline" className="flex items-center space-x-1">
+                <Clock className="w-3 h-3" />
+                <span>{formatDuration(callDuration)}</span>
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!isCallActive ? (
+            <div className="text-center space-y-4">
+              <p className="text-gray-600">Ready to start your voice conversation with Iki?</p>
+              <Button
+                onClick={startVoiceCall}
+                disabled={isConnecting || !assistantId}
+                className="bg-purple-600 hover:bg-purple-700"
+                size="lg"
+              >
                 {isConnecting ? (
-                  <div className="flex items-center space-x-2 p-3 bg-yellow-50 rounded-lg">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
-                    <span className="text-yellow-700">Connecting...</span>
-                  </div>
-                ) : isCallActive ? (
-                  <div className="flex items-center space-x-2 p-3 bg-green-50 rounded-lg">
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-green-700 font-medium">Connected to Iki</span>
-                  </div>
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Connecting...
+                  </>
                 ) : (
-                  <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                    <span className="text-gray-700">Disconnected</span>
-                  </div>
+                  <>
+                    <Phone className="w-5 h-5 mr-2" />
+                    Start Voice Conversation
+                  </>
                 )}
-
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="p-2 bg-gray-50 rounded text-center">
-                    <div className="font-medium">{formatDuration(callDuration)}</div>
-                    <div className="text-gray-600">Duration</div>
-                  </div>
-                  <div className="p-2 bg-gray-50 rounded text-center">
-                    <div className="font-medium">{callStatus}</div>
-                    <div className="text-gray-600">Status</div>
-                  </div>
-                </div>
-
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                {isCallActive ? (
-                  <Button onClick={endVoiceConversation} variant="destructive" className="w-full">
-                    <PhoneOff className="w-4 h-4 mr-2" />
-                    End Conversation
-                  </Button>
-                ) : (
-                  <Button onClick={startVoiceConversation} disabled={isConnecting} className="w-full">
-                    <Phone className="w-4 h-4 mr-2" />
-                    {isConnecting ? "Connecting..." : "Restart Conversation"}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Survey Progress */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Survey Progress</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Overall Progress</span>
-                    <span>{surveyProgress}%</span>
-                  </div>
-                  <Progress value={surveyProgress} className="w-full" />
-                </div>
-
-                {currentSection && (
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-700">
-                      <strong>Current Section:</strong> {currentSection}
-                    </p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 gap-2 text-xs">
-                  <div className="p-2 bg-gray-50 rounded text-center">
-                    <div className="font-medium">14 Sections Total</div>
-                    <div className="text-gray-600">Comprehensive Ikigai Survey</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* User Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Session Info</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Email:</span>
-                    <span className="font-medium">{userEmail}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Survey Type:</span>
-                    <span className="font-medium">Ikigai Discovery</span>
-                  </div>
-                  {callId && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Call ID:</span>
-                      <span className="font-mono text-xs">{callId.slice(0, 8)}...</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column - Conversation Log */}
-          <div className="lg:col-span-2">
-            <Card className="h-[700px] flex flex-col">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <MessageSquare className="w-5 h-5" />
-                  <span>Live Conversation Log</span>
-                  <Badge variant="outline">{conversationLog.length} entries</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-hidden">
-                <div className="h-full overflow-y-auto space-y-3 pr-2">
-                  {conversationLog.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      <div className="text-center">
-                        <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>Conversation will appear here</p>
-                        <p className="text-sm">Start speaking with Iki to see the live log</p>
-                      </div>
-                    </div>
-                  ) : (
-                    conversationLog.map((entry, index) => (
-                      <div key={index} className={`p-3 rounded-lg border ${getTypeColor(entry.type)}`}>
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            {getTypeIcon(entry.type)}
-                            <span className="font-medium text-sm capitalize">
-                              {entry.type === "assistant" ? "Iki" : entry.type}
-                            </span>
-                            {entry.functionName && (
-                              <Badge variant="outline" className="text-xs">
-                                {entry.functionName}
-                              </Badge>
-                            )}
-                          </div>
-                          <span className="text-xs text-gray-500">{formatTime(entry.timestamp)}</span>
-                        </div>
-                        <p className="text-sm leading-relaxed">{entry.content}</p>
-                        {entry.functionArgs && (
-                          <div className="mt-2 p-2 bg-white/50 rounded text-xs">
-                            <pre className="whitespace-pre-wrap">{JSON.stringify(entry.functionArgs, null, 2)}</pre>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Instructions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Voice Conversation Tips</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <h4 className="font-medium mb-2">🎤 Speaking</h4>
-                <p className="text-gray-600">
-                  Speak clearly and naturally. Iki will wait for you to finish before responding.
-                </p>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Speaking with Iki</span>
+                <span>Progress: {Math.round(progress)}%</span>
               </div>
-              <div className="p-3 bg-green-50 rounded-lg">
-                <h4 className="font-medium mb-2">⏱️ Pacing</h4>
-                <p className="text-gray-600">
-                  Take your time to think. The survey covers 14 sections and typically takes 30-40 minutes.
-                </p>
-              </div>
-              <div className="p-3 bg-purple-50 rounded-lg">
-                <h4 className="font-medium mb-2">💭 Responses</h4>
-                <p className="text-gray-600">
-                  Be honest and detailed. Your responses help create a more accurate Ikigai analysis.
-                </p>
+              <Progress value={progress} className="w-full" />
+
+              <div className="flex space-x-2">
+                <Button onClick={endVoiceCall} variant="destructive" className="flex-1">
+                  <PhoneOff className="w-4 h-4 mr-2" />
+                  End Conversation
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsMuted(!isMuted)}
+                  title={isMuted ? "Unmute" : "Mute"}
+                >
+                  {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Conversation Log */}
+      <Card className="h-[400px] flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center space-x-2">
+              <MessageCircle className="w-5 h-5" />
+              <span>Conversation</span>
+            </span>
+            <Badge variant="outline">{conversation.length} messages</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full pr-4">
+            <div className="space-y-4">
+              {conversation.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Your conversation will appear here once started.</p>
+                </div>
+              ) : (
+                conversation.map((message) => (
+                  <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`max-w-[80%] p-3 rounded-lg ${
+                        message.role === "user" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-900"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium">{message.role === "user" ? "You" : "Iki"}</span>
+                        <span className="text-xs opacity-70">{new Date(message.timestamp).toLocaleTimeString()}</span>
+                      </div>
+                      <p className="text-sm">{message.content}</p>
+                      {message.functionCall && (
+                        <div className="mt-2 text-xs opacity-70">Action: {message.functionCall.name}</div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* Error Display */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Hidden iframe for VAPI web call */}
+      <iframe
+        ref={webCallFrame}
+        style={{ display: "none" }}
+        width="0"
+        height="0"
+        title="VAPI Voice Conversation"
+        allow="microphone"
+      />
     </div>
   )
 }

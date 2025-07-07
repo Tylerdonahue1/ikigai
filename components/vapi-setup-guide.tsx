@@ -1,358 +1,470 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle, XCircle, Settings, ExternalLink, Copy, Loader2 } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CheckCircle, AlertCircle, ExternalLink, Key, Settings, Mic, Phone, Code, Shield, Loader2 } from "lucide-react"
 
 export default function VAPISetupGuide() {
-  const [setupStatus, setSetupStatus] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [connectionStatus, setConnectionStatus] = useState<"idle" | "testing" | "success" | "error">("idle")
+  const [connectionDetails, setConnectionDetails] = useState<any>(null)
 
-  useEffect(() => {
-    checkSetupStatus()
-  }, [])
-
-  const checkSetupStatus = async () => {
+  const testConnection = async () => {
+    setConnectionStatus("testing")
     try {
-      const response = await fetch("/api/vapi-setup")
+      const response = await fetch("/api/vapi/test-connection")
       const data = await response.json()
-      setSetupStatus(data)
+      setConnectionDetails(data)
+      setConnectionStatus(data.success ? "success" : "error")
     } catch (error) {
-      console.error("Error checking setup status:", error)
-      setError("Failed to check setup status")
+      setConnectionStatus("error")
+      setConnectionDetails({ error: "Failed to test connection" })
     }
   }
 
-  const runSetup = async () => {
-    setIsLoading(true)
-    setError(null)
-
+  const createAssistant = async () => {
     try {
-      const response = await fetch("/api/vapi-setup", { method: "POST" })
+      const response = await fetch("/api/vapi/create-assistant", {
+        method: "POST",
+      })
       const data = await response.json()
-
       if (data.success) {
-        setSetupStatus({ ...setupStatus, assistantId: data.assistantId })
-        alert("VAPI setup completed successfully!")
+        alert(`Assistant created successfully! ID: ${data.assistantId}`)
       } else {
-        setError(data.error)
+        alert(`Failed to create assistant: ${data.error}`)
       }
     } catch (error) {
-      console.error("Error running setup:", error)
-      setError("Failed to run setup")
-    } finally {
-      setIsLoading(false)
+      alert("Error creating assistant")
     }
-  }
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    alert("Copied to clipboard!")
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">VAPI Voice Bot Setup Guide</h1>
-        <p className="text-gray-600">Follow these steps to configure your VAPI-powered Ikigai voice bot assistant.</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">VAPI Integration Setup Guide</h1>
+        <p className="text-lg text-gray-600">
+          Complete guide to setting up voice conversations with VAPI for your Ikigai assessment
+        </p>
       </div>
 
-      {/* Status Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Settings className="w-5 h-5" />
-            <span>Setup Status</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span>API Key</span>
-              <Badge variant={setupStatus?.apiKeyConfigured ? "default" : "destructive"}>
-                {setupStatus?.apiKeyConfigured ? (
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                ) : (
-                  <XCircle className="w-4 h-4 mr-1" />
-                )}
-                {setupStatus?.apiKeyConfigured ? "Configured" : "Missing"}
-              </Badge>
-            </div>
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="setup">Setup</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="testing">Testing</TabsTrigger>
+          <TabsTrigger value="troubleshooting">Troubleshooting</TabsTrigger>
+        </TabsList>
 
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span>Connection</span>
-              <Badge variant={setupStatus?.connected ? "default" : "destructive"}>
-                {setupStatus?.connected ? (
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                ) : (
-                  <XCircle className="w-4 h-4 mr-1" />
-                )}
-                {setupStatus?.connected ? "Connected" : "Failed"}
-              </Badge>
-            </div>
+        <TabsContent value="overview" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Mic className="w-6 h-6" />
+                <span>What is VAPI?</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-gray-600">
+                VAPI (Voice API) is a platform that enables voice-powered AI conversations. In your Ikigai application,
+                it powers the voice survey feature where users can speak naturally with Iki, the AI assistant.
+              </p>
 
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span>Assistant</span>
-              <Badge variant={setupStatus?.assistantId ? "default" : "secondary"}>
-                {setupStatus?.assistantId ? (
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                ) : (
-                  <XCircle className="w-4 h-4 mr-1" />
-                )}
-                {setupStatus?.assistantId ? "Ready" : "Not Created"}
-              </Badge>
-            </div>
-          </div>
-
-          {error && (
-            <Alert variant="destructive" className="mt-4">
-              <XCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Step-by-Step Guide */}
-      <div className="space-y-6">
-        {/* Step 1: VAPI Account Setup */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 1: VAPI Account Setup</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ol className="list-decimal list-inside space-y-2 text-sm">
-              <li>
-                Go to{" "}
-                <a
-                  href="https://vapi.ai"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline inline-flex items-center"
-                >
-                  vapi.ai <ExternalLink className="w-3 h-3 ml-1" />
-                </a>{" "}
-                and create an account
-              </li>
-              <li>Navigate to the Dashboard and go to "API Keys"</li>
-              <li>Create a new API key and copy it</li>
-              <li>Add the API key to your server environment variables as VAPI_API_KEY</li>
-            </ol>
-
-            <div className="bg-gray-100 p-3 rounded-lg">
-              <div className="flex items-center justify-between">
-                <code className="text-sm">VAPI_API_KEY=your_api_key_here</code>
-                <Button variant="outline" size="sm" onClick={() => copyToClipboard("VAPI_API_KEY=your_api_key_here")}>
-                  <Copy className="w-4 h-4" />
-                </Button>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <Phone className="w-8 h-8 text-blue-500 mb-2" />
+                  <h3 className="font-semibold">Voice Calls</h3>
+                  <p className="text-sm text-gray-600">Real-time voice conversations with AI</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <Settings className="w-8 h-8 text-green-500 mb-2" />
+                  <h3 className="font-semibold">AI Assistants</h3>
+                  <p className="text-sm text-gray-600">Customizable AI personalities and behaviors</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <Code className="w-8 h-8 text-purple-500 mb-2" />
+                  <h3 className="font-semibold">Function Calls</h3>
+                  <p className="text-sm text-gray-600">AI can execute custom functions during conversations</p>
+                </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <Alert>
-              <AlertDescription>
-                <strong>Security Note:</strong> The API key is stored server-side only for better security. Never use
-                NEXT_PUBLIC_ prefix for sensitive API keys.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-
-        {/* Step 2: Assistant Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 2: Assistant Configuration</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-gray-600">
-              The assistant will be automatically configured with the following settings:
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <h4 className="font-medium mb-2">Model Configuration:</h4>
-                <ul className="space-y-1 text-gray-600">
-                  <li>• Provider: OpenAI</li>
-                  <li>• Model: GPT-4</li>
-                  <li>• Temperature: 0.7</li>
-                  <li>• Max Tokens: 500</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-2">Voice Configuration:</h4>
-                <ul className="space-y-1 text-gray-600">
-                  <li>• Provider: Eleven Labs</li>
-                  <li>• Voice: Rachel (warm, professional)</li>
-                  <li>• Speed: 0.9x</li>
-                  <li>• Stability: 0.6</li>
-                </ul>
-              </div>
-            </div>
-
-            <Button onClick={runSetup} disabled={isLoading || !setupStatus?.apiKeyConfigured} className="w-full">
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Setting up assistant...
-                </>
-              ) : (
-                "Create Ikigai Assistant"
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Step 3: Function Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 3: Function Configuration</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600 mb-4">
-              The assistant will be configured with these functions to capture and process Ikigai data:
-            </p>
-
-            <div className="space-y-3">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-sm">capture_survey_response</h4>
-                <p className="text-xs text-gray-600">Captures and validates user responses to survey questions</p>
-              </div>
-
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-sm">navigate_survey</h4>
-                <p className="text-xs text-gray-600">Manages conversation flow and section transitions</p>
-              </div>
-
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-sm">validate_rating_response</h4>
-                <p className="text-xs text-gray-600">Validates 1-5 rating scale responses for activity preferences</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Step 4: Testing */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 4: Testing & Validation</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-gray-600">Once the assistant is created, test the voice bot functionality:</p>
-
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Enter a valid email address</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Click "Start Voice Survey"</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Allow microphone permissions when prompted</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Speak with Iki and verify responses are captured</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Complete the survey and verify data processing</span>
-              </div>
-            </div>
-
-            <Alert>
-              <AlertDescription>
-                <strong>Important:</strong> Make sure your browser allows microphone access and that you're using HTTPS
-                in production for voice functionality to work properly.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-
-        {/* Step 5: Deployment Considerations */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 5: Deployment Considerations</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div>
-                <h4 className="font-medium text-sm mb-2">Environment Variables</h4>
-                <div className="bg-gray-100 p-3 rounded-lg space-y-1">
-                  <div className="flex items-center justify-between">
-                    <code className="text-xs">VAPI_API_KEY</code>
-                    <Badge variant="outline">Required (Server-side)</Badge>
+          <Card>
+            <CardHeader>
+              <CardTitle>Integration Architecture</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                    1
                   </div>
-                  <div className="flex items-center justify-between">
-                    <code className="text-xs">ANTHROPIC_API_KEY</code>
-                    <Badge variant="outline">Required</Badge>
+                  <div>
+                    <h4 className="font-semibold">User starts voice survey</h4>
+                    <p className="text-sm text-gray-600">Frontend creates web call via your API</p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <code className="text-xs">STORAGE_URL</code>
-                    <Badge variant="outline">Required</Badge>
+                </div>
+                <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                    2
                   </div>
-                  <div className="flex items-center justify-between">
-                    <code className="text-xs">STORAGE_TOKEN</code>
-                    <Badge variant="outline">Required</Badge>
+                  <div>
+                    <h4 className="font-semibold">VAPI handles voice processing</h4>
+                    <p className="text-sm text-gray-600">Speech-to-text, AI processing, text-to-speech</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">AI captures survey data</h4>
+                    <p className="text-sm text-gray-600">Function calls save responses to your database</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="setup" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Key className="w-6 h-6" />
+                <span>API Key Configuration</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Security Notice:</strong> Always use server-side API keys (VAPI_API_KEY) for production. Never
+                  expose API keys in client-side code.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold text-green-600 mb-2">✅ Correct Setup (Server-side)</h4>
+                  <div className="bg-green-50 p-3 rounded border border-green-200">
+                    <code className="text-sm">VAPI_API_KEY=sk-your-private-key-here</code>
+                    <p className="text-xs text-green-600 mt-1">Private key (sk-) used in server-side API routes only</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-red-600 mb-2">❌ Incorrect Setup (Client-side)</h4>
+                  <div className="bg-red-50 p-3 rounded border border-red-200">
+                    <code className="text-sm line-through">NEXT_PUBLIC_VAPI_API_KEY=sk-your-key</code>
+                    <p className="text-xs text-red-600 mt-1">Never expose private keys to the client</p>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <h4 className="font-medium text-sm mb-2">Security Best Practices</h4>
-                <ul className="text-xs text-gray-600 space-y-1">
-                  <li>• VAPI API key is server-side only (no NEXT_PUBLIC_ prefix)</li>
-                  <li>• All VAPI operations go through secure API routes</li>
-                  <li>• Client-side code never accesses sensitive keys</li>
-                  <li>• Implement rate limiting for voice calls</li>
-                  <li>• Monitor API usage and costs regularly</li>
+              <div className="bg-blue-50 p-4 rounded border border-blue-200">
+                <h4 className="font-semibold text-blue-700 mb-2">Environment Variable Setup:</h4>
+                <ol className="text-sm text-blue-600 space-y-1 list-decimal list-inside">
+                  <li>Get your private API key from VAPI dashboard</li>
+                  <li>Add VAPI_API_KEY to your environment variables</li>
+                  <li>Remove any NEXT_PUBLIC_VAPI_API_KEY variables</li>
+                  <li>Redeploy your application</li>
+                </ol>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Step-by-Step Setup</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-1">
+                    1
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Create VAPI Account</h4>
+                    <p className="text-sm text-gray-600 mb-2">Sign up at dashboard.vapi.ai</p>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="https://dashboard.vapi.ai" target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Open VAPI Dashboard
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-1">
+                    2
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Get API Key</h4>
+                    <p className="text-sm text-gray-600">
+                      Navigate to API Keys section and create a new private key (starts with sk-)
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-1">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Configure Environment</h4>
+                    <p className="text-sm text-gray-600">Add VAPI_API_KEY to your deployment environment</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-1">
+                    4
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Test Connection</h4>
+                    <p className="text-sm text-gray-600 mb-2">Verify your setup works correctly</p>
+                    <Button onClick={testConnection} disabled={connectionStatus === "testing"} size="sm">
+                      {connectionStatus === "testing" ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Testing...
+                        </>
+                      ) : (
+                        "Test Connection"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-1">
+                    5
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Create Assistant</h4>
+                    <p className="text-sm text-gray-600 mb-2">Set up the Ikigai AI assistant</p>
+                    <Button onClick={createAssistant} variant="outline" size="sm">
+                      Create Ikigai Assistant
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Shield className="w-6 h-6" />
+                <span>Security Best Practices</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Critical:</strong> API keys should never be exposed to client-side code. Always use
+                  server-side routes for VAPI operations.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold text-green-600 mb-2">✅ Secure Implementation</h4>
+                  <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                    <li>API keys stored as server-side environment variables</li>
+                    <li>All VAPI calls made through /api/vapi/* routes</li>
+                    <li>Client components only make HTTP requests to your API</li>
+                    <li>No direct VAPI SDK usage in client components</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-red-600 mb-2">❌ Security Risks to Avoid</h4>
+                  <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                    <li>Using NEXT_PUBLIC_ prefixed API keys</li>
+                    <li>Direct VAPI SDK calls from client components</li>
+                    <li>Hardcoding API keys in source code</li>
+                    <li>Exposing API keys in browser developer tools</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded border border-blue-200">
+                <h4 className="font-semibold text-blue-700 mb-2">Current Implementation:</h4>
+                <ul className="text-sm text-blue-600 space-y-1 list-disc list-inside">
+                  <li>VAPIServer class handles all API communication</li>
+                  <li>Client components use fetch() to call your API routes</li>
+                  <li>API keys never leave your server environment</li>
+                  <li>Proper error handling for authentication issues</li>
                 </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="testing" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Connection Testing</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span>VAPI Connection Status</span>
+                <div className="flex items-center space-x-2">
+                  <Badge
+                    variant={
+                      connectionStatus === "success"
+                        ? "default"
+                        : connectionStatus === "error"
+                          ? "destructive"
+                          : "secondary"
+                    }
+                  >
+                    {connectionStatus === "idle"
+                      ? "Not Tested"
+                      : connectionStatus === "testing"
+                        ? "Testing..."
+                        : connectionStatus === "success"
+                          ? "Connected"
+                          : "Failed"}
+                  </Badge>
+                  <Button onClick={testConnection} disabled={connectionStatus === "testing"} size="sm">
+                    {connectionStatus === "testing" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Test Now"}
+                  </Button>
+                </div>
+              </div>
+
+              {connectionDetails && (
+                <div className="mt-4 p-4 bg-gray-50 rounded border">
+                  <h4 className="font-semibold mb-2">Connection Details:</h4>
+                  <pre className="text-xs bg-white p-2 rounded border overflow-auto">
+                    {JSON.stringify(connectionDetails, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {connectionStatus === "success" && (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    ✅ VAPI connection successful! Your voice survey feature is ready to use.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {connectionStatus === "error" && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    ❌ Connection failed. Check your API key configuration and try again.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="troubleshooting" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Common Issues & Solutions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <h4 className="font-semibold text-red-600 mb-2">❌ "Invalid Key" Error</h4>
+                <div className="bg-red-50 p-3 rounded border border-red-200 mb-2">
+                  <code className="text-sm">VAPI API error: 401 - Invalid Key</code>
+                </div>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p>
+                    <strong>Cause:</strong> Wrong API key type or invalid key
+                  </p>
+                  <p>
+                    <strong>Solution:</strong>
+                  </p>
+                  <ul className="list-disc list-inside ml-4 space-y-1">
+                    <li>Verify you're using a private key (starts with sk-)</li>
+                    <li>Check the key is active in your VAPI dashboard</li>
+                    <li>Ensure no extra spaces or characters in the key</li>
+                  </ul>
+                </div>
               </div>
 
               <div>
-                <h4 className="font-medium text-sm mb-2">Performance Optimization</h4>
-                <ul className="text-xs text-gray-600 space-y-1">
-                  <li>• Cache assistant ID in localStorage</li>
-                  <li>• Implement connection retry logic</li>
-                  <li>• Set appropriate timeout values</li>
-                  <li>• Monitor voice call quality and duration</li>
-                </ul>
+                <h4 className="font-semibold text-red-600 mb-2">❌ "Environment Variable Not Found"</h4>
+                <div className="bg-red-50 p-3 rounded border border-red-200 mb-2">
+                  <code className="text-sm">VAPI_API_KEY environment variable is required</code>
+                </div>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p>
+                    <strong>Cause:</strong> API key not configured in deployment
+                  </p>
+                  <p>
+                    <strong>Solution:</strong>
+                  </p>
+                  <ul className="list-disc list-inside ml-4 space-y-1">
+                    <li>Add VAPI_API_KEY to your environment variables</li>
+                    <li>Redeploy your application</li>
+                    <li>Verify the key is available in your deployment logs</li>
+                  </ul>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={checkSetupStatus}>
-              Refresh Status
-            </Button>
-            <Button variant="outline" asChild>
-              <a href="https://vapi.ai/dashboard" target="_blank" rel="noopener noreferrer">
-                Open VAPI Dashboard <ExternalLink className="w-4 h-4 ml-1" />
-              </a>
-            </Button>
-            <Button variant="outline" asChild>
-              <a href="/voice-dashboard">View Voice Sessions</a>
-            </Button>
-            <Button variant="outline" asChild>
-              <a href="/system-status">System Health</a>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <div>
+                <h4 className="font-semibold text-orange-600 mb-2">⚠️ Assistant Creation Fails</h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p>
+                    <strong>Possible Causes:</strong>
+                  </p>
+                  <ul className="list-disc list-inside ml-4 space-y-1">
+                    <li>Insufficient API key permissions</li>
+                    <li>Account limits reached</li>
+                    <li>Invalid assistant configuration</li>
+                  </ul>
+                  <p>
+                    <strong>Solution:</strong>
+                  </p>
+                  <ul className="list-disc list-inside ml-4 space-y-1">
+                    <li>Check your VAPI dashboard for account status</li>
+                    <li>Verify API key has assistant creation permissions</li>
+                    <li>Review server logs for detailed error messages</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-blue-600 mb-2">💡 Getting Help</h4>
+                <div className="text-sm text-gray-600 space-y-2">
+                  <p>If you're still experiencing issues:</p>
+                  <ul className="list-disc list-inside ml-4 space-y-1">
+                    <li>Check the browser console for client-side errors</li>
+                    <li>Review server logs for detailed error messages</li>
+                    <li>Test the connection using the testing tab above</li>
+                    <li>Verify your VAPI dashboard shows the correct API key</li>
+                  </ul>
+                  <div className="mt-3">
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="https://docs.vapi.ai" target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        VAPI Documentation
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

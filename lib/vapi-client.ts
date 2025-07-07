@@ -23,84 +23,29 @@ export interface VAPIMessage {
   secondsFromStart?: number
 }
 
+// DEPRECATED: This client-side VAPI integration is deprecated for security reasons
+// All VAPI operations should be handled server-side through API routes
+
 export class VAPIClient {
-  private apiKey: string
-  private baseUrl = "https://api.vapi.ai"
-
-  constructor(apiKey: string) {
-    this.apiKey = apiKey
+  constructor() {
+    throw new Error(
+      "Direct client-side VAPI usage is deprecated for security reasons. " +
+        "Please use server-side API routes (/api/vapi/*) instead. " +
+        "This ensures API keys are not exposed to the client.",
+    )
   }
 
-  async createCall(config: {
-    phoneNumber?: string
-    assistantId?: string
-    assistant?: any
-    customer?: {
-      number?: string
-      name?: string
-      email?: string
-    }
-  }): Promise<VAPICall> {
-    const response = await fetch(`${this.baseUrl}/call`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(config),
-    })
-
-    if (!response.ok) {
-      throw new Error(`VAPI API error: ${response.statusText}`)
-    }
-
-    return response.json()
+  // Legacy methods that should not be used
+  static createWebCall() {
+    throw new Error("Use /api/vapi/create-web-call instead")
   }
 
-  async createWebCall(config: {
-    assistant: any
-    customer?: {
-      name?: string
-      email?: string
-    }
-  }): Promise<{ webCallUrl: string; callId: string }> {
-    const response = await fetch(`${this.baseUrl}/call/web`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(config),
-    })
-
-    if (!response.ok) {
-      throw new Error(`VAPI API error: ${response.statusText}`)
-    }
-
-    return response.json()
+  static endCall() {
+    throw new Error("Use /api/vapi/end-call/[callId] instead")
   }
 
-  async getCall(callId: string): Promise<VAPICall> {
-    const response = await fetch(`${this.baseUrl}/call/${callId}`, {
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`VAPI API error: ${response.statusText}`)
-    }
-
-    return response.json()
-  }
-
-  async endCall(callId: string): Promise<void> {
-    await fetch(`${this.baseUrl}/call/${callId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-    })
+  static getCall() {
+    throw new Error("Use /api/vapi/get-call/[callId] instead")
   }
 
   createAssistant(formData: any, currentSection: string, currentQuestion: number) {
@@ -207,3 +152,6 @@ ASSESSMENT STRUCTURE:
 Remember: This is a meaningful conversation about their life purpose, not just data collection. Make it feel personal and insightful.`
   }
 }
+
+// Export for backward compatibility but with deprecation warning
+export default VAPIClient

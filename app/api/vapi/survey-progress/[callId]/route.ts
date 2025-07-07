@@ -6,11 +6,19 @@ export async function GET(request: NextRequest, { params }: { params: { callId: 
     const { callId } = params
 
     if (!callId) {
-      return NextResponse.json({ success: false, error: "Call ID is required" }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Call ID is required",
+        },
+        { status: 400 },
+      )
     }
 
-    const vapiServer = new VAPIServer()
-    const progress = await vapiServer.getSurveyProgress(callId)
+    console.log("Getting survey progress for call:", callId)
+
+    const vapi = new VAPIServer()
+    const progress = await vapi.getSurveyProgress(callId)
 
     return NextResponse.json({
       success: true,
@@ -18,12 +26,16 @@ export async function GET(request: NextRequest, { params }: { params: { callId: 
     })
   } catch (error) {
     console.error("Error getting survey progress:", error)
+
+    const isAuthError = error instanceof Error && error.message.includes("Authentication Error")
+
     return NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
+        isAuthError,
       },
-      { status: 500 },
+      { status: isAuthError ? 401 : 500 },
     )
   }
 }
