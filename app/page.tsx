@@ -1,9 +1,5 @@
-import { AssessmentForm } from "@/components/assessment-form"
+import VoiceBotHomepage from "@/components/voice-bot-homepage"
 
-export default function Home() {
-  return (
-    <main>
-      <AssessmentForm />
-    </main>
-  )
+export default function HomePage() {
+  return <VoiceBotHomepage />
 }
