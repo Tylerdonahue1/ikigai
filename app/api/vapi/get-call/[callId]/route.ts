@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { VAPIServer } from "@/lib/vapi-server"
+import { getVAPIServerClient } from "@/lib/vapi-server"
 
 export async function GET(request: NextRequest, { params }: { params: { callId: string } }) {
   try {
@@ -15,27 +15,38 @@ export async function GET(request: NextRequest, { params }: { params: { callId: 
       )
     }
 
-    console.log("Getting call details for:", callId)
+    console.log("Getting VAPI call:", callId)
 
-    const vapi = new VAPIServer()
-    const call = await vapi.getCall(callId)
+    const vapiClient = getVAPIServerClient()
+    const call = await vapiClient.getCall(callId)
+
+    console.log("✅ Call retrieved successfully")
 
     return NextResponse.json({
       success: true,
-      call,
+      call: {
+        id: call.id,
+        assistantId: call.assistantId,
+        status: call.status,
+        createdAt: call.createdAt,
+        endedAt: call.endedAt,
+        duration: call.duration,
+        metadata: call.metadata,
+        transcript: call.transcript,
+      },
+      timestamp: new Date().toISOString(),
     })
-  } catch (error) {
-    console.error("Error getting call:", error)
-
-    const isAuthError = error instanceof Error && error.message.includes("Authentication Error")
+  } catch (error: any) {
+    console.error("❌ Failed to get call:", error)
 
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        isAuthError,
+        error: error.message,
+        details: error.stack,
+        timestamp: new Date().toISOString(),
       },
-      { status: isAuthError ? 401 : 500 },
+      { status: 500 },
     )
   }
 }

@@ -1,53 +1,50 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { VAPIServer } from "@/lib/vapi-server"
+import { getVAPIServerClient, IKIGAI_ASSISTANT_ID } from "@/lib/vapi-server"
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { assistantId, customer, metadata } = body
+    const { metadata = {} } = body
 
-    if (!assistantId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Assistant ID is required",
-        },
-        { status: 400 },
-      )
-    }
+    console.log("Creating VAPI web call...")
+    console.log("Assistant ID:", IKIGAI_ASSISTANT_ID)
+    console.log("Metadata:", metadata)
 
-    console.log("Creating web call for assistant:", assistantId)
+    const vapiClient = getVAPIServerClient()
 
-    const vapi = new VAPIServer()
+    // Create a web call using the pre-created assistant
+    const call = await vapiClient.createWebCall(IKIGAI_ASSISTANT_ID, {
+      ...metadata,
+      type: "web",
+      timestamp: new Date().toISOString(),
+    })
 
-    const webCallConfig = {
-      assistantId,
-      customer: customer || {},
-      metadata: metadata || {},
-    }
-
-    const webCall = await vapi.createWebCall(webCallConfig)
-
-    console.log("Successfully created web call:", webCall.id)
+    console.log("✅ Web call created successfully")
+    console.log("Call ID:", call.id)
 
     return NextResponse.json({
       success: true,
-      callId: webCall.id,
-      webCallUrl: webCall.webCallUrl,
-      call: webCall,
+      call: {
+        id: call.id,
+        assistantId: call.assistantId,
+        status: call.status,
+        createdAt: call.createdAt,
+        metadata: call.metadata,
+      },
+      message: "Web call created successfully",
+      timestamp: new Date().toISOString(),
     })
-  } catch (error) {
-    console.error("Error creating web call:", error)
-
-    const isAuthError = error instanceof Error && error.message.includes("Authentication Error")
+  } catch (error: any) {
+    console.error("❌ Failed to create web call:", error)
 
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        isAuthError,
+        error: error.message,
+        details: error.stack,
+        timestamp: new Date().toISOString(),
       },
-      { status: isAuthError ? 401 : 500 },
+      { status: 500 },
     )
   }
 }

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { VAPIServer } from "@/lib/vapi-server"
+import { getVAPIServerClient } from "@/lib/vapi-server"
 
 export async function POST(request: NextRequest, { params }: { params: { callId: string } }) {
   try {
@@ -15,70 +15,35 @@ export async function POST(request: NextRequest, { params }: { params: { callId:
       )
     }
 
-    console.log("Ending call:", callId)
+    console.log("Ending VAPI call:", callId)
 
-    const vapi = new VAPIServer()
-    const result = await vapi.endCall(callId)
+    const vapiClient = getVAPIServerClient()
+    const call = await vapiClient.endCall(callId)
 
-    console.log("Successfully ended call:", callId)
+    console.log("✅ Call ended successfully")
 
     return NextResponse.json({
       success: true,
-      result,
+      call: {
+        id: call.id,
+        status: call.status,
+        endedAt: call.endedAt,
+        duration: call.duration,
+      },
+      message: "Call ended successfully",
+      timestamp: new Date().toISOString(),
     })
-  } catch (error) {
-    console.error("Error ending call:", error)
-
-    const isAuthError = error instanceof Error && error.message.includes("Authentication Error")
+  } catch (error: any) {
+    console.error("❌ Failed to end call:", error)
 
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        isAuthError,
+        error: error.message,
+        details: error.stack,
+        timestamp: new Date().toISOString(),
       },
-      { status: isAuthError ? 401 : 500 },
-    )
-  }
-}
-
-export async function DELETE(request: NextRequest, { params }: { params: { callId: string } }) {
-  try {
-    const { callId } = params
-
-    if (!callId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Call ID is required",
-        },
-        { status: 400 },
-      )
-    }
-
-    console.log("Ending call via DELETE:", callId)
-
-    const vapi = new VAPIServer()
-    const result = await vapi.endCall(callId)
-
-    console.log("Successfully ended call:", callId)
-
-    return NextResponse.json({
-      success: true,
-      result,
-    })
-  } catch (error) {
-    console.error("Error ending call:", error)
-
-    const isAuthError = error instanceof Error && error.message.includes("Authentication Error")
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        isAuthError,
-      },
-      { status: isAuthError ? 401 : 500 },
+      { status: 500 },
     )
   }
 }
