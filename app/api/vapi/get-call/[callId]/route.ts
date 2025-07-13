@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getVAPIServerClient } from "@/lib/vapi-server"
+import { getVapiCall } from "@/lib/vapi-actions"
 
 export async function GET(request: NextRequest, { params }: { params: { callId: string } }) {
   try {
@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: { callId: 
       return NextResponse.json(
         {
           success: false,
-          error: "Call ID is required",
+          message: "Call ID is required",
         },
         { status: 400 },
       )
@@ -17,34 +17,32 @@ export async function GET(request: NextRequest, { params }: { params: { callId: 
 
     console.log("Getting VAPI call:", callId)
 
-    const vapiClient = getVAPIServerClient()
-    const call = await vapiClient.getCall(callId)
+    const result = await getVapiCall(callId)
 
-    console.log("✅ Call retrieved successfully")
-
-    return NextResponse.json({
-      success: true,
-      call: {
-        id: call.id,
-        assistantId: call.assistantId,
-        status: call.status,
-        createdAt: call.createdAt,
-        endedAt: call.endedAt,
-        duration: call.duration,
-        metadata: call.metadata,
-        transcript: call.transcript,
-      },
-      timestamp: new Date().toISOString(),
-    })
+    if (result.success) {
+      return NextResponse.json({
+        success: true,
+        call: result.call,
+        message: "Call retrieved successfully",
+      })
+    } else {
+      return NextResponse.json(
+        {
+          success: false,
+          message: result.message,
+          error: result.error,
+        },
+        { status: 404 },
+      )
+    }
   } catch (error: any) {
-    console.error("❌ Failed to get call:", error)
+    console.error("Failed to get call:", error)
 
     return NextResponse.json(
       {
         success: false,
+        message: "Failed to get call",
         error: error.message,
-        details: error.stack,
-        timestamp: new Date().toISOString(),
       },
       { status: 500 },
     )

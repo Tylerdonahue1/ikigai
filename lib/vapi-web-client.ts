@@ -1,5 +1,7 @@
-// VAPI Web SDK Client Wrapper - Client-side only
-// This uses the official @vapi-ai/web SDK for real-time voice conversations
+"use client"
+
+// Your pre-created assistant ID
+export const IKIGAI_ASSISTANT_ID = "5542140a-b071-4455-8d43-6a0eb424dbc4"
 
 export interface VAPIWebClient {
   initialize(): Promise<void>
@@ -11,28 +13,25 @@ export interface VAPIWebClient {
   off(event: string, callback?: (data?: any) => void): void
 }
 
-// Your pre-created assistant ID - no need to create new ones
-export const IKIGAI_ASSISTANT_ID = "5542140a-b071-4455-8d43-6a0eb424dbc4"
-
 class VAPIWebClientImpl implements VAPIWebClient {
   private vapi: any = null
   private isInitialized = false
+  private publicKey: string
+
+  constructor(publicKey: string) {
+    this.publicKey = publicKey
+  }
 
   async initialize(): Promise<void> {
     if (this.isInitialized) return
 
     try {
-      // Import the VAPI Web SDK dynamically
+      // Dynamic import for client-side only
       const { default: Vapi } = await import("@vapi-ai/web")
 
-      const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY
-      if (!publicKey) {
-        throw new Error("NEXT_PUBLIC_VAPI_PUBLIC_KEY environment variable is required")
-      }
+      console.log("Initializing VAPI Web SDK with public key:", this.publicKey.substring(0, 10) + "...")
 
-      console.log("Initializing VAPI Web SDK with public key:", publicKey.substring(0, 10) + "...")
-
-      this.vapi = new Vapi(publicKey)
+      this.vapi = new Vapi(this.publicKey)
       this.isInitialized = true
 
       console.log("✅ VAPI Web SDK initialized successfully")
@@ -51,7 +50,6 @@ class VAPIWebClientImpl implements VAPIWebClient {
       console.log("🚀 Starting call with assistant:", IKIGAI_ASSISTANT_ID)
 
       // For VAPI Web SDK, we pass the assistant ID directly to the start method
-      // The Web SDK expects just the assistant ID, not wrapped in an object
       await this.vapi.start(IKIGAI_ASSISTANT_ID, config)
     } catch (error) {
       console.error("❌ Failed to start call:", error)
@@ -83,7 +81,7 @@ class VAPIWebClientImpl implements VAPIWebClient {
   }
 
   isMuted(): boolean {
-    return this.vapi?.isMuted || false
+    return this.vapi?.isMuted() || false
   }
 
   on(event: string, callback: (data?: any) => void): void {
@@ -102,7 +100,28 @@ let vapiClientInstance: VAPIWebClient | null = null
 
 export function getVAPIWebClient(): VAPIWebClient {
   if (!vapiClientInstance) {
-    vapiClientInstance = new VAPIWebClientImpl()
+    const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY
+
+    if (!publicKey) {
+      throw new Error("NEXT_PUBLIC_VAPI_PUBLIC_KEY environment variable is required")
+    }
+
+    vapiClientInstance = new VAPIWebClientImpl(publicKey)
   }
+
   return vapiClientInstance
 }
+
+// Alternative function name for compatibility
+export function createVapiWebClient(publicKey?: string): VAPIWebClient {
+  const key = publicKey || process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY
+
+  if (!key) {
+    throw new Error("VAPI public key is required")
+  }
+
+  return new VAPIWebClientImpl(key)
+}
+
+// Export the type for use in other files
+export type { VAPIWebClient }
