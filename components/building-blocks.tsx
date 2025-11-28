@@ -37,3 +37,4 @@ export default function BuildingBlocks({ data }: BuildingBlocksProps) {
     </div>
   )
 }
+

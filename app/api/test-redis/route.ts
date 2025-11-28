@@ -5,8 +5,8 @@ export async function GET() {
   try {
     // Initialize Redis client
     const redis = new Redis({
-      url: process.env.STORAGE_URL || "", // Or your new URL variable name
-      token: process.env.STORAGE_TOKEN || "", // Or your new TOKEN variable name
+      url: process.env.KV_REST_API_URL || "",
+      token: process.env.KV_REST_API_TOKEN || "",
     })
 
     // Test connection by setting and getting a value
@@ -19,8 +19,8 @@ export async function GET() {
       message: "Redis connection successful",
       result,
       env: {
-        url: process.env.STORAGE_URL ? "Set" : "Not set", // Or your new URL variable name
-        token: process.env.STORAGE_TOKEN ? "Set" : "Not set", // Or your new TOKEN variable name
+        url: process.env.KV_REST_API_URL ? "Set" : "Not set",
+        token: process.env.KV_REST_API_TOKEN ? "Set" : "Not set",
       },
     })
   } catch (error) {
@@ -32,11 +32,12 @@ export async function GET() {
         error: "Redis connection failed",
         details: error instanceof Error ? error.message : String(error),
         env: {
-          url: process.env.STORAGE_URL ? "Set" : "Not set", // Or your new URL variable name
-          token: process.env.STORAGE_TOKEN ? "Set" : "Not set", // Or your new TOKEN variable name
+          url: process.env.KV_REST_API_URL ? "Set" : "Not set",
+          token: process.env.KV_REST_API_TOKEN ? "Set" : "Not set",
         },
       },
       { status: 500 },
     )
   }
 }
+

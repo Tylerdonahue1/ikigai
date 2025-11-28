@@ -20,3 +20,4 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${process.env.SITE_URL}`)
   }
 }
+

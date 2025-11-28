@@ -13,7 +13,7 @@ export const metadata = {
   title: "Ikigai Assessment",
   description: "Discover your unique purpose with our Ikigai assessment",
   viewport: "width=device-width, initial-scale=1.0, maximum-scale=5.0",
-    generator: 'v0.dev'
+    generator: 'v0.app'
 }
 
 export default function RootLayout({
@@ -31,3 +31,4 @@ export default function RootLayout({
     </html>
   )
 }
+

@@ -8,8 +8,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     // Initialize Redis client
     const redis = new Redis({
-      url: process.env.STORAGE_URL || "", // Or your new URL variable name
-      token: process.env.STORAGE_TOKEN || "", // Or your new TOKEN variable name
+      url: process.env.KV_REST_API_URL || "",
+      token: process.env.KV_REST_API_TOKEN || "",
     })
 
     // Fetch the data
@@ -32,3 +32,4 @@ export async function GET(request: Request, { params }: { params: { id: string }
     )
   }
 }
+

@@ -145,3 +145,4 @@ export default function InteractiveIkigaiDiagram({ data, className }: Interactiv
     </div>
   )
 }
+

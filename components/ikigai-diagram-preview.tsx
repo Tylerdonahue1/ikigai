@@ -158,3 +158,4 @@ export default function IkigaiDiagramPreview({ className, data }: IkigaiDiagramP
     </div>
   )
 }
+

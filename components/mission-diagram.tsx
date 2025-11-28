@@ -28,3 +28,4 @@ export default function MissionDiagram({ className }: MissionDiagramProps) {
     </div>
   )
 }
+

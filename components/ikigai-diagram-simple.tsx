@@ -21,3 +21,4 @@ export default function IkigaiDiagramSimple({ className }: IkigaiDiagramSimplePr
     </div>
   )
 }
+

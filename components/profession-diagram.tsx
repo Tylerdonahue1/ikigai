@@ -28,3 +28,4 @@ export default function ProfessionDiagram({ className }: ProfessionDiagramProps)
     </div>
   )
 }
+

@@ -28,3 +28,4 @@ export default function VocationDiagram({ className }: VocationDiagramProps) {
     </div>
   )
 }
+
