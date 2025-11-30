@@ -97,4 +97,3 @@ export default function IkigaiDiagram({ className }: IkigaiDiagramProps) {
     </div>
   )
 }
-

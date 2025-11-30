@@ -19,17 +19,17 @@ export default function BuildingBlocks({ data }: BuildingBlocksProps) {
 
   return (
     <div>
-      <h2 className="text-3xl font-serif font-bold text-[#E07A5F] mb-6">Your Building Blocks</h2>
-      <p className="text-lg text-[#3D405B] font-serif mb-6">
+      <h2 className="text-3xl font-bold text-[#E07A5F] mb-6 hidden">Your Building Blocks</h2>
+      <p className="text-[#3D405B] mb-6">
         The building blocks of your Ikigai based on your responses
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {blocks.map((block, index) => (
-          <Card key={index} className={`${block.bgColor} shadow-md`}>
+          <Card key={index} className={`${block.bgColor} shadow-lg border-[#E07A5F] border bg-white transition-all hover:bg-[#F4F1DE]`}>
             <CardContent className="p-6">
-              <h3 className="text-2xl font-serif font-bold text-[#3D405B] mb-3">{block.title}</h3>
-              <p className="text-lg text-[#3D405B] font-serif">{block.content}</p>
+              <h3 className="text-2xl font-bold text-[#3D405B] mb-3">{block.title}</h3>
+              <p className="text-base leading-[1.62] text-[#3D405B]">{block.content}</p>
             </CardContent>
           </Card>
         ))}
@@ -37,4 +37,3 @@ export default function BuildingBlocks({ data }: BuildingBlocksProps) {
     </div>
   )
 }
-

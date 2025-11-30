@@ -62,7 +62,7 @@ export default function ProcessingPage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-white py-16 px-4 md:px-8">
       <div className="max-w-3xl mx-auto text-center">
-        <h1 className="text-4xl font-serif font-bold text-[#3D405B] mb-8">Processing Your Ikigai Assessment</h1>
+        <h1 className="text-4xl  font-bold text-[#3D405B] mb-8">Processing Your Ikigai Assessment</h1>
 
         {status === "checking" && (
           <>
@@ -73,8 +73,8 @@ export default function ProcessingPage({ params }: { params: { id: string } }) {
                   style={{ width: `${Math.min(100, (attempts / 15) * 100)}%` }}
                 ></div>
               </div>
-              <p className="text-xl text-[#3D405B] font-serif">Please wait while we prepare your assessment...</p>
-              <p className="text-lg text-[#3D405B] font-serif mt-2">Estimated time remaining: {countdown} seconds</p>
+              <p className="text-xl text-[#3D405B] ">Please wait while we prepare your assessment...</p>
+              <p className="text-lg text-[#3D405B]  mt-2">Estimated time remaining: {countdown} seconds</p>
             </div>
 
             <div className="flex justify-center space-x-2">
@@ -92,12 +92,12 @@ export default function ProcessingPage({ params }: { params: { id: string } }) {
         )}
 
         {status === "ready" && (
-          <p className="text-xl text-[#3D405B] font-serif">Your assessment is ready! Redirecting you now...</p>
+          <p className="text-xl text-[#3D405B] ">Your assessment is ready! Redirecting you now...</p>
         )}
 
         {status === "not-found" && (
           <>
-            <p className="text-xl text-[#3D405B] font-serif mb-8">
+            <p className="text-xl text-[#3D405B]  mb-8">
               We're still processing your assessment. This is taking longer than expected.
             </p>
 
@@ -124,4 +124,3 @@ export default function ProcessingPage({ params }: { params: { id: string } }) {
     </div>
   )
 }
-

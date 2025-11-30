@@ -21,4 +21,3 @@ export default function PaymentButton({ id, className, fullWidth = false }: Paym
     </Button>
   )
 }
-

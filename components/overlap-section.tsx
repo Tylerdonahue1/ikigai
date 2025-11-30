@@ -31,13 +31,13 @@ export default function OverlapSection({
     <div className="mt-8">
       {" "}
       {/* Added more top margin for spacing */}
-      <h2 className={`text-3xl font-serif font-bold text-[${headerColor}] mb-2`}>{title}</h2>
-      <p className="text-lg text-[#3D405B] font-serif mb-6">{subtitle}</p>
+      <h2 className={`text-3xl hidden  font-bold text-[${headerColor}] mb-2`}>{title}</h2>
+      <p className="text-lg text-[#3D405B]  mb-6">{subtitle}</p>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <Card className="lg:col-span-2 bg-[#F4F1DE] shadow-md">
           <CardContent className="p-6">
-            <h3 className="text-2xl font-serif font-bold text-[#3D405B] mb-3">Overlap</h3>
-            <p className="text-lg text-[#3D405B] font-serif">{overlap}</p>
+            <h3 className="text-2xl  font-bold text-[#3D405B] mb-3">Overlap</h3>
+            <p className="text-base leading-[1.62] text-[#3D405B]">{overlap}</p>
           </CardContent>
         </Card>
 
@@ -54,7 +54,7 @@ export default function OverlapSection({
                 <div className={`absolute w-32 h-32 rounded-full bottom-0 right-0 ${color2} opacity-60`}></div>
                 <div className="absolute top-0 left-0 text-base font-bold text-[#3D405B]">{area1}</div>
                 <div className="absolute bottom-0 right-0 text-base font-bold text-[#3D405B]">{area2}</div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xl font-serif font-bold text-[#E07A5F]">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xl  font-bold text-[#E07A5F]">
                   {title}
                 </div>
               </div>
@@ -62,12 +62,12 @@ export default function OverlapSection({
           </div>
         </div>
       </div>
-      <Card className="bg-[#F4F1DE] shadow-md">
+      <Card className="bg-white border border-[#E07A5F] shadow-lg">
         <CardContent className="p-6">
-          <h3 className="text-2xl font-serif font-bold text-[#3D405B] mb-3">Examples</h3>
+          <h3 className="text-2xl  font-bold text-[#3D405B] mb-3">Examples</h3>
           <ul className="list-disc pl-5 space-y-2">
             {examples.map((example, index) => (
-              <li key={index} className="text-lg text-[#3D405B] font-serif">
+              <li key={index} className="text-[#3D405B]">
                 {example}
               </li>
             ))}
@@ -77,4 +77,3 @@ export default function OverlapSection({
     </div>
   )
 }
-

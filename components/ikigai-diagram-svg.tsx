@@ -23,39 +23,38 @@ export default function IkigaiDiagramSVG() {
         <circle cx="400" cy="600" r="250" fill="transparent" stroke="#aaa" strokeWidth="1" filter="url(#shadow)" />
 
         {/* Labels */}
-        <text x="400" y="120" textAnchor="middle" fontSize="24" fontWeight="bold" fontFamily="serif" fill="#3D405B">
+        <text x="400" y="120" textAnchor="middle" fontSize="24" fontWeight="bold"  fill="#3D405B">
           What You Love
         </text>
-        <text x="120" y="400" textAnchor="middle" fontSize="24" fontWeight="bold" fontFamily="serif" fill="#3D405B">
+        <text x="120" y="400" textAnchor="middle" fontSize="24" fontWeight="bold"  fill="#3D405B">
           What You Are Good At
         </text>
-        <text x="680" y="400" textAnchor="middle" fontSize="24" fontWeight="bold" fontFamily="serif" fill="#3D405B">
+        <text x="680" y="400" textAnchor="middle" fontSize="24" fontWeight="bold"  fill="#3D405B">
           What The World Needs
         </text>
-        <text x="400" y="680" textAnchor="middle" fontSize="24" fontWeight="bold" fontFamily="serif" fill="#3D405B">
+        <text x="400" y="680" textAnchor="middle" fontSize="24" fontWeight="bold"  fill="#3D405B">
           What You Can Be Paid For
         </text>
 
         {/* Overlap Labels */}
-        <text x="300" y="300" textAnchor="middle" fontSize="24" fontWeight="bold" fontFamily="serif" fill="#3D405B">
+        <text x="300" y="300" textAnchor="middle" fontSize="24" fontWeight="bold"  fill="#3D405B">
           Passion
         </text>
-        <text x="500" y="300" textAnchor="middle" fontSize="24" fontWeight="bold" fontFamily="serif" fill="#3D405B">
+        <text x="500" y="300" textAnchor="middle" fontSize="24" fontWeight="bold"  fill="#3D405B">
           Mission
         </text>
-        <text x="300" y="500" textAnchor="middle" fontSize="24" fontWeight="bold" fontFamily="serif" fill="#3D405B">
+        <text x="300" y="500" textAnchor="middle" fontSize="24" fontWeight="bold"  fill="#3D405B">
           Profession
         </text>
-        <text x="500" y="500" textAnchor="middle" fontSize="24" fontWeight="bold" fontFamily="serif" fill="#3D405B">
+        <text x="500" y="500" textAnchor="middle" fontSize="24" fontWeight="bold"  fill="#3D405B">
           Vocation
         </text>
 
         {/* Ikigai Center Label */}
-        <text x="400" y="408" textAnchor="middle" fontSize="28" fontWeight="bold" fontFamily="serif" fill="#E07A5F">
+        <text x="400" y="408" textAnchor="middle" fontSize="28" fontWeight="bold"  fill="#E07A5F">
           Ikigai
         </text>
       </g>
     </svg>
   )
 }
-

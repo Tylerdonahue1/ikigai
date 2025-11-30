@@ -22,7 +22,7 @@ export default async function IkigaiPage({ params }: PageProps) {
 
     // Check if payment has been made
     const payment = await redis.get<any>(`payment:${id}`)
-    const isPaid = !!payment && payment.paid === true
+    const isPaid = payment && payment.paid === true
 
     // If not paid, redirect to preview page
     if (!isPaid) {
@@ -61,4 +61,3 @@ export default async function IkigaiPage({ params }: PageProps) {
     throw error
   }
 }
-

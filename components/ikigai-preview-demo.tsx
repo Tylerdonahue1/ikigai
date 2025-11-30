@@ -34,8 +34,8 @@ export default function IkigaiPreviewDemo({ className }: IkigaiPreviewDemoProps)
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-serif font-bold text-[#3D405B] mb-4">{mockData.name}'s Ikigai Assessment</h1>
-          <p className="text-xl text-[#3D405B] font-serif mb-8">
+          <h1 className="text-4xl  font-bold text-[#3D405B] mb-4">{mockData.name}'s Ikigai Assessment</h1>
+          <p className="text-xl text-[#3D405B]  mb-8">
             Here's a preview of your Ikigai assessment. Unlock the full report to discover your unique purpose.
           </p>
         </div>
@@ -47,10 +47,10 @@ export default function IkigaiPreviewDemo({ className }: IkigaiPreviewDemoProps)
 
         {/* Payment CTA */}
         <div className="bg-[#F4F1DE] rounded-lg p-8 shadow-md mb-12">
-          <h2 className="text-3xl font-serif font-bold text-[#E07A5F] mb-4 text-center">
+          <h2 className="text-3xl  font-bold text-[#E07A5F] mb-4 text-center">
             Unlock Your Full Ikigai Report
           </h2>
-          <p className="text-lg text-[#3D405B] font-serif mb-6 text-center">
+          <p className="text-lg text-[#3D405B]  mb-6 text-center">
             Your full report includes detailed insights, personalized suggestions, and role model inspirations to help
             you live a more fulfilling life aligned with your Ikigai.
           </p>
@@ -64,13 +64,13 @@ export default function IkigaiPreviewDemo({ className }: IkigaiPreviewDemoProps)
 
         {/* What's Included Section */}
         <div className="mb-16">
-          <h2 className="text-3xl font-serif font-bold text-[#3D405B] mb-8 text-center">
+          <h2 className="text-3xl  font-bold text-[#3D405B] mb-8 text-center">
             What's Included in the Full Report
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-xl font-serif font-bold text-[#E07A5F] mb-3">Detailed Analysis</h3>
+              <h3 className="text-xl  font-bold text-[#E07A5F] mb-3">Detailed Analysis</h3>
               <p className="text-[#3D405B]">
                 In-depth exploration of your passions, skills, values, and potential career paths aligned with your
                 Ikigai.
@@ -78,14 +78,14 @@ export default function IkigaiPreviewDemo({ className }: IkigaiPreviewDemoProps)
             </Card>
 
             <Card className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-xl font-serif font-bold text-[#E07A5F] mb-3">Personalized Suggestions</h3>
+              <h3 className="text-xl  font-bold text-[#E07A5F] mb-3">Personalized Suggestions</h3>
               <p className="text-[#3D405B]">
                 Actionable recommendations for projects, careers, and activities that align with your unique Ikigai.
               </p>
             </Card>
 
             <Card className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-xl font-serif font-bold text-[#E07A5F] mb-3">Role Model Inspirations</h3>
+              <h3 className="text-xl  font-bold text-[#E07A5F] mb-3">Role Model Inspirations</h3>
               <p className="text-[#3D405B]">
                 Profiles of people who embody elements of your Ikigai, providing real-world inspiration and insights.
               </p>
@@ -96,4 +96,3 @@ export default function IkigaiPreviewDemo({ className }: IkigaiPreviewDemoProps)
     </div>
   )
 }
-

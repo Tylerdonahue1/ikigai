@@ -119,4 +119,3 @@ export const mockUserData = {
     "Junichi Masuda's GDC talks about designing systems for Pokémon games",
   ],
 }
-

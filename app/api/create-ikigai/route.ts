@@ -260,4 +260,3 @@ function extractRoleModels(roleModelFinder: any): any[] {
     return []
   }
 }
-

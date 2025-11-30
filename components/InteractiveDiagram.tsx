@@ -2,42 +2,25 @@
 
 import { useState } from "react";
 import { useTouchDevice } from "@/hooks/use-touch-device";
-import { useMobile } from "@/hooks/use-mobile";
 import { X } from "lucide-react";
-import { Lightbulb } from "lucide-react";
 
 interface InteractiveIkigaiDiagramProps {
-  data: {
-    love: string;
-    good: string;
-    world: string;
-    paid: string;
-    passion: string;
-    mission: string;
-    vocation: string;
-    profession: string;
-    ikigai: string;
-  };
   className?: string;
 }
 
-export default function InteractiveIkigaiDiagram({
-  data,
+export default function InteractiveDiagram({
   className,
 }: InteractiveIkigaiDiagramProps) {
   const [activeSection, setActiveSection] = useState<string | null>(null);
-  const [values, setValues] = useState<string[]>([]);
   const isTouchDevice = useTouchDevice();
-  const isMobile = useMobile();
   const [isHovered, setIsHovered] = useState(false);
+  const [values, setValues] = useState<string[]>([]);
 
   const handleInteraction = (section: string) => {
     if (isTouchDevice) {
-      // Toggle behavior - if clicking the same section, close it
       setActiveSection(activeSection === section ? null : section);
     }
   };
-
   let prevHoveredCount = 0;
 
   const handleMultiOver = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -112,19 +95,8 @@ export default function InteractiveIkigaiDiagram({
   };
 
   return (
-    <div
-      className={`relative bg-[#f4f1de] rounded-[10px] ${className} flex items-center flex-col md:flex-row-reverse pt-5 md:py-0`}
-    >
-      {/* SVG Diagram - centered with larger size on mobile */}
-      <div className={`relative mx-auto px-4 md:w-[50%] w-full`}>
-        {!isHovered && (
-          <div className="hoverIndicator flex items-center justify-center relative top-2 md:left-7 md:top-4">
-            <p className="bg-[#e07a5f] text-white flex items-center gap-1 p-2 rounded max-w-[max-content] text-sm">
-              <Lightbulb size={14} />
-              Click/Hover on below diagram to reveal
-            </p>
-          </div>
-        )}
+    <div className={`relative ${className}`}>
+      <div className={`relative mx-auto px-4 flex justify-center items-center w-full md:mt-[-70px] my-0` }>
         <svg
           onMouseMove={(e) => handleMultiOver(e)}
           onMouseOut={handleMouseOut}
@@ -237,6 +209,7 @@ export default function InteractiveIkigaiDiagram({
               textAnchor="middle"
               fontSize="24"
               fontWeight="bold"
+              
               fill="#3D405B"
             >
               What You Love
@@ -248,6 +221,7 @@ export default function InteractiveIkigaiDiagram({
               textAnchor="middle"
               fontSize="24"
               fontWeight="bold"
+              
               fill="#3D405B"
             >
               What You Are Good At
@@ -259,6 +233,7 @@ export default function InteractiveIkigaiDiagram({
               textAnchor="middle"
               fontSize="24"
               fontWeight="bold"
+              
               fill="#3D405B"
             >
               What The World Needs
@@ -270,6 +245,7 @@ export default function InteractiveIkigaiDiagram({
               textAnchor="middle"
               fontSize="24"
               fontWeight="bold"
+              
               fill="#3D405B"
             >
               What You Can Be Paid For
@@ -283,6 +259,7 @@ export default function InteractiveIkigaiDiagram({
               textAnchor="middle"
               fontSize="24"
               fontWeight="bold"
+              
               fill="#3D405B"
             >
               Passion
@@ -294,6 +271,7 @@ export default function InteractiveIkigaiDiagram({
               textAnchor="middle"
               fontSize="24"
               fontWeight="bold"
+              
               fill="#3D405B"
             >
               Mission
@@ -305,6 +283,7 @@ export default function InteractiveIkigaiDiagram({
               textAnchor="middle"
               fontSize="24"
               fontWeight="bold"
+              
               fill="#3D405B"
             >
               Profession
@@ -316,6 +295,7 @@ export default function InteractiveIkigaiDiagram({
               textAnchor="middle"
               fontSize="24"
               fontWeight="bold"
+              
               fill="#3D405B"
             >
               Vocation
@@ -329,60 +309,13 @@ export default function InteractiveIkigaiDiagram({
               textAnchor="middle"
               fontSize="28"
               fontWeight="bold"
+              
               fill="#E07A5F"
             >
               Ikigai
             </text>
           </g>
         </svg>
-      </div>
-
-      {/* Hover/click tooltip for dynamic text */}
-      <div
-        className={`md:w-[50%] w-full md:pl-4 px-4 md:static relative -top-12`}
-      >
-        {activeSection ? (
-          <div
-            className={`bg-white w-full p-3 md:p-6 rounded-lg overflow-auto transition-transform duration-300 ${
-              isHovered ? "transform scale-100" : "transform scale-95"
-            }`}
-          >
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-[22px]  font-bold text-[#E07A5F] capitalize">
-                {activeSection}
-              </h3>
-              {isTouchDevice && (
-                <button
-                  onClick={() => setActiveSection(null)}
-                  className="text-gray-500 hover:text-gray-700 p-1"
-                  aria-label="Close"
-                >
-                  <X size={20} />
-                </button>
-              )}
-            </div>
-            <p className="text-[#3D405B] text-base leading-[1.62]">
-              {data[activeSection as keyof typeof data]}
-            </p>
-          </div>
-        ) : (
-          <div
-            className={`bg-white w-full p-3 md:p-6 rounded-lg overflow-auto transition-transform duration-300 ${
-              isHovered ? "transform scale-100" : "transform scale-95"
-            }`}
-          >
-            <p className="text-[#3D405B] text-base leading-[1.62]">
-              Ikigai, a Japanese concept, translates to{" "}
-              <span>
-                <strong>"a reason for living"</strong>
-              </span>{" "}
-              or "a reason to be" and refers to something that gives a person a
-              sense of purpose and meaning in life. It's about finding joy and
-              motivation in daily activities and contributing to something
-              larger than oneself.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
